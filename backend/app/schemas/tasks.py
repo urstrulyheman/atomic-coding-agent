@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.models.enums import TaskStatus
+from app.schemas.events import JobEvent, JobLog
 
 
 class TaskDefinition(BaseModel):
@@ -38,3 +39,10 @@ class TaskSummary(BaseModel):
     started_at: datetime | None = None
     finished_at: datetime | None = None
 
+
+class TaskDetail(TaskSummary):
+    context_files: list[str] = Field(default_factory=list)
+    acceptance_criteria: list[str] = Field(default_factory=list)
+    risk_flags: list[str] = Field(default_factory=list)
+    logs: list[JobLog] = Field(default_factory=list)
+    events: list[JobEvent] = Field(default_factory=list)

@@ -16,7 +16,7 @@ from app.schemas.jobs import (
     ReviewSnapshot,
     TaskCounts,
 )
-from app.schemas.tasks import PlannerOutput, TaskDefinition, TaskSummary
+from app.schemas.tasks import PlannerOutput, TaskDefinition, TaskDetail, TaskSummary
 from app.schemas.validation import ValidationCheck, ValidationRun
 
 
@@ -166,6 +166,62 @@ class InMemoryStore:
         if updated_task is None:
             raise KeyError(task_key)
         return updated_task
+
+    def get_task(self, job_id: UUID, task_id: UUID) -> TaskSummary | None:
+        for task in self.tasks[job_id]:
+            if task.id == task_id:
+                return task
+        return None
+
+    def task_detail(self, job_id: UUID, task_id: UUID) -> TaskDetail | None:
+        task = self.get_task(job_id, task_id)
+        if task is None:
+            return None
+        task_logs = [log for log in self.logs[job_id] if log.task_id == task_id]
+        task_events = [
+            event
+            for event in self.events[job_id]
+            if event.metadata_json and event.metadata_json.get("task_key") == task.task_key
+        ]
+        return TaskDetail(
+            **task.model_dump(),
+            context_files=self._task_context_files(task.task_type),
+            acceptance_criteria=self._task_acceptance_criteria(task.task_type),
+            risk_flags=self._task_risk_flags(task.task_type),
+            logs=task_logs,
+            events=task_events,
+        )
+
+    def _task_context_files(self, task_type: str) -> list[str]:
+        context_by_type = {
+            "repo_analysis": ["README.md", "package.json", "backend/requirements.txt"],
+            "design": ["backend/app/services/store.py", "backend/app/services/orchestrator.py"],
+            "backend_implementation": ["backend/app/api/routes/jobs.py", "backend/app/services/store.py"],
+            "frontend_implementation": ["frontend/src/app/jobs/[jobId]/page.tsx", "frontend/src/components/jobs"],
+            "test_generation": ["backend/tests/test_jobs.py"],
+            "validation": ["frontend/package.json", "backend/requirements.txt"],
+        }
+        return context_by_type.get(task_type, [])
+
+    def _task_acceptance_criteria(self, task_type: str) -> list[str]:
+        common = ["Output must be structured and auditable.", "Task must leave enough logs for review."]
+        criteria_by_type = {
+            "repo_analysis": ["Detect project layout and likely execution commands."],
+            "design": ["Produce an executable DAG with clear dependencies."],
+            "backend_implementation": ["Expose typed API contracts and stable status transitions."],
+            "frontend_implementation": ["Render task state clearly at desktop and mobile widths."],
+            "test_generation": ["Cover new backend behavior with endpoint tests."],
+            "validation": ["Run configured checks and persist the result."],
+        }
+        return criteria_by_type.get(task_type, []) + common
+
+    def _task_risk_flags(self, task_type: str) -> list[str]:
+        risk_by_type = {
+            "backend_implementation": ["api_contract_change"],
+            "frontend_implementation": ["ui_state_regression"],
+            "validation": ["false_positive_validation"],
+        }
+        return risk_by_type.get(task_type, [])
 
     def _unlock_ready_tasks(self, tasks: list[TaskSummary]) -> list[TaskSummary]:
         succeeded = {task.task_key for task in tasks if task.status == TaskStatus.SUCCEEDED}

@@ -62,7 +62,7 @@ export default function JobDetailPage() {
       </div>
 
       {activeTab === "overview" && <OverviewTab job={job.data} status={status.data} />}
-      {activeTab === "tasks" && <TasksTab tasks={tasks.data ?? []} />}
+      {activeTab === "tasks" && <TasksTab jobId={jobId} tasks={tasks.data ?? []} />}
       {activeTab === "live" && <LiveActivity events={events} connected={connected} />}
       {activeTab === "approvals" && <ApprovalsTab approvals={approvals.data ?? []} />}
       {activeTab === "logs" && <LogsTab logs={logs.data ?? []} />}

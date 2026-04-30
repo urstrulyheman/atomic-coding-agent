@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi.testclient import TestClient
-from app.services.store import store
+from app.services.store import default_plan, store
 
 from app.main import app
 
@@ -70,3 +70,26 @@ def test_completed_job_exposes_diff_artifact():
     content = client.get(f"/api/v1/jobs/{job_id}/artifacts/{diff_artifact['id']}/content")
     assert content.status_code == 200
     assert "diff --git" in content.json()["body"]
+
+
+def test_task_detail_endpoint_returns_context():
+    response = client.post(
+        "/api/v1/jobs",
+        json={
+            "title": "Task detail smoke",
+            "request_text": "Exercise task detail endpoint.",
+            "repo_url": "https://github.com/example/app",
+        },
+    )
+    assert response.status_code == 201
+    job_id = response.json()["job_id"]
+    store.create_plan_tasks(UUID(job_id), default_plan("Exercise task detail endpoint."))
+
+    tasks = client.get(f"/api/v1/jobs/{job_id}/tasks")
+    assert tasks.status_code == 200
+    task_id = tasks.json()[0]["id"]
+
+    detail = client.get(f"/api/v1/jobs/{job_id}/tasks/{task_id}")
+    assert detail.status_code == 200
+    assert detail.json()["id"] == task_id
+    assert detail.json()["acceptance_criteria"]

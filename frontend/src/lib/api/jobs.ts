@@ -3,7 +3,7 @@ import type { ApprovalDetail } from "@/lib/types/approval";
 import type { Artifact, ArtifactContent } from "@/lib/types/artifact";
 import type { JobEvent } from "@/lib/types/event";
 import type { JobCreate, JobDetail, JobStatusSnapshot, JobSummary } from "@/lib/types/job";
-import type { TaskSummary } from "@/lib/types/task";
+import type { TaskDetail, TaskSummary } from "@/lib/types/task";
 import type { ValidationRun } from "@/lib/types/validation";
 
 export function createJob(payload: JobCreate) {
@@ -27,6 +27,10 @@ export function getJobStatus(jobId: string) {
 
 export function getJobTasks(jobId: string) {
   return api<TaskSummary[]>(`/jobs/${jobId}/tasks`);
+}
+
+export function getJobTask(jobId: string, taskId: string) {
+  return api<TaskDetail>(`/jobs/${jobId}/tasks/${taskId}`);
 }
 
 export type JobLog = {

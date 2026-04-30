@@ -9,7 +9,7 @@ from app.schemas.artifacts import Artifact, ArtifactContent
 from app.schemas.approvals import ApprovalDetail
 from app.schemas.events import JobEvent, JobLog
 from app.schemas.jobs import JobCreate, JobDetail, JobStatusSnapshot, JobSummary
-from app.schemas.tasks import TaskSummary
+from app.schemas.tasks import TaskDetail, TaskSummary
 from app.schemas.validation import ValidationRun
 from app.services.orchestrator import orchestrator
 from app.services.store import store
@@ -47,6 +47,16 @@ def get_job_tasks(job_id: UUID) -> list[TaskSummary]:
     if store.get_job(job_id) is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return store.tasks[job_id]
+
+
+@router.get("/{job_id}/tasks/{task_id}", response_model=TaskDetail)
+def get_job_task(job_id: UUID, task_id: UUID) -> TaskDetail:
+    if store.get_job(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    task = store.task_detail(job_id, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
 
 
 @router.get("/{job_id}/events", response_model=list[JobEvent])

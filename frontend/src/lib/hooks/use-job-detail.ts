@@ -9,6 +9,7 @@ import {
   getJobArtifactContent,
   getJobLogs,
   getJobStatus,
+  getJobTask,
   getJobTasks,
   getJobValidation,
 } from "@/lib/api/jobs";
@@ -35,6 +36,14 @@ export function useJobTasks(jobId: string) {
     queryKey: queryKeys.jobTasks(jobId),
     queryFn: () => getJobTasks(jobId),
     enabled: Boolean(jobId),
+  });
+}
+
+export function useJobTask(jobId: string, taskId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.jobTask(jobId, taskId ?? ""),
+    queryFn: () => getJobTask(jobId, taskId ?? ""),
+    enabled: Boolean(jobId && taskId),
   });
 }
 
