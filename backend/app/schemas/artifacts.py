@@ -14,3 +14,7 @@ class Artifact(BaseModel):
     metadata_json: dict | None = None
     created_at: datetime
 
+
+class ArtifactContent(BaseModel):
+    artifact: Artifact
+    body: str

@@ -9,3 +9,7 @@ export type Artifact = {
   created_at: string;
 };
 
+export type ArtifactContent = {
+  artifact: Artifact;
+  body: string;
+};

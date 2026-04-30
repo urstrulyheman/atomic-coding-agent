@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.schemas.artifacts import Artifact
+from app.schemas.artifacts import Artifact, ArtifactContent
 from app.schemas.approvals import ApprovalDetail
 from app.schemas.events import JobEvent, JobLog
 from app.schemas.jobs import JobCreate, JobDetail, JobStatusSnapshot, JobSummary
@@ -86,6 +86,19 @@ def get_job_artifacts(job_id: UUID) -> list[Artifact]:
     if store.get_job(job_id) is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return store.artifacts[job_id]
+
+
+@router.get("/{job_id}/artifacts/{artifact_id}/content", response_model=ArtifactContent)
+def get_job_artifact_content(job_id: UUID, artifact_id: UUID) -> ArtifactContent:
+    if store.get_job(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    artifact = store.get_artifact(job_id, artifact_id)
+    if artifact is None:
+        raise HTTPException(status_code=404, detail="Artifact not found")
+    body = ""
+    if artifact.metadata_json:
+        body = str(artifact.metadata_json.get("body") or artifact.metadata_json.get("summary") or "")
+    return ArtifactContent(artifact=artifact, body=body)
 
 
 @router.get("/{job_id}/validation", response_model=list[ValidationRun])

@@ -6,6 +6,7 @@ import {
   getJob,
   getJobApprovals,
   getJobArtifacts,
+  getJobArtifactContent,
   getJobLogs,
   getJobStatus,
   getJobTasks,
@@ -50,6 +51,14 @@ export function useJobArtifacts(jobId: string) {
     queryKey: queryKeys.jobArtifacts(jobId),
     queryFn: () => getJobArtifacts(jobId),
     enabled: Boolean(jobId),
+  });
+}
+
+export function useJobArtifactContent(jobId: string, artifactId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.jobArtifactContent(jobId, artifactId ?? ""),
+    queryFn: () => getJobArtifactContent(jobId, artifactId ?? ""),
+    enabled: Boolean(jobId && artifactId),
   });
 }
 

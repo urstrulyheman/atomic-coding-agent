@@ -5,6 +5,10 @@ export function getApproval(approvalId: string) {
   return api<ApprovalDetail>(`/approvals/${approvalId}`);
 }
 
+export function getApprovals() {
+  return api<ApprovalDetail[]>("/approvals");
+}
+
 export function approveApproval(approvalId: string, comment?: string) {
   return api<ApprovalDetail>(`/approvals/${approvalId}/approve`, {
     method: "POST",
@@ -18,4 +22,3 @@ export function rejectApproval(approvalId: string, comment?: string) {
     body: JSON.stringify({ comment }),
   });
 }
-

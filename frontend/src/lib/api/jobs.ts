@@ -1,6 +1,6 @@
 import { api } from "./client";
 import type { ApprovalDetail } from "@/lib/types/approval";
-import type { Artifact } from "@/lib/types/artifact";
+import type { Artifact, ArtifactContent } from "@/lib/types/artifact";
 import type { JobEvent } from "@/lib/types/event";
 import type { JobCreate, JobDetail, JobStatusSnapshot, JobSummary } from "@/lib/types/job";
 import type { TaskSummary } from "@/lib/types/task";
@@ -45,6 +45,10 @@ export function getJobLogs(jobId: string) {
 
 export function getJobArtifacts(jobId: string) {
   return api<Artifact[]>(`/jobs/${jobId}/artifacts`);
+}
+
+export function getJobArtifactContent(jobId: string, artifactId: string) {
+  return api<ArtifactContent>(`/jobs/${jobId}/artifacts/${artifactId}/content`);
 }
 
 export function getJobValidation(jobId: string) {

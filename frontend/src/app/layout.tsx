@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Activity, Gauge, GitPullRequestArrow, Plus } from "lucide-react";
+import { Activity, CheckSquare, Gauge, GitPullRequestArrow, Plus } from "lucide-react";
 
 import "./globals.css";
 import { Providers } from "./providers";
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 const nav = [
   { href: "/jobs", label: "Jobs", icon: Activity },
   { href: "/new", label: "New", icon: Plus },
+  { href: "/approvals", label: "Approvals", icon: CheckSquare },
   { href: "/dashboard", label: "Dashboard", icon: Gauge },
 ];
 
@@ -52,4 +53,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

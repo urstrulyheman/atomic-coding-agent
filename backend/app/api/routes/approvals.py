@@ -9,6 +9,11 @@ from app.services.store import store
 router = APIRouter(prefix="/approvals", tags=["approvals"])
 
 
+@router.get("", response_model=list[ApprovalDetail])
+def list_approvals() -> list[ApprovalDetail]:
+    return store.list_approvals()
+
+
 @router.get("/{approval_id}", response_model=ApprovalDetail)
 def get_approval(approval_id: UUID) -> ApprovalDetail:
     approval = store.approvals.get(approval_id)
@@ -29,4 +34,3 @@ def reject_approval(approval_id: UUID, payload: ApprovalDecisionRequest) -> Appr
     if approval_id not in store.approvals:
         raise HTTPException(status_code=404, detail="Approval not found")
     return store.decide_approval(approval_id, ApprovalDecision.REJECTED, payload.comment)
-

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { approveApproval, getApproval, rejectApproval } from "@/lib/api/approvals";
+import { approveApproval, getApproval, getApprovals, rejectApproval } from "@/lib/api/approvals";
 import { queryKeys } from "@/lib/utils/query-keys";
 
 export function useApproval(approvalId: string) {
@@ -10,6 +10,13 @@ export function useApproval(approvalId: string) {
     queryKey: queryKeys.approval(approvalId),
     queryFn: () => getApproval(approvalId),
     enabled: Boolean(approvalId),
+  });
+}
+
+export function useApprovals() {
+  return useQuery({
+    queryKey: queryKeys.approvals,
+    queryFn: getApprovals,
   });
 }
 
@@ -28,4 +35,3 @@ export function useRejectApproval(approvalId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.approval(approvalId) }),
   });
 }
-

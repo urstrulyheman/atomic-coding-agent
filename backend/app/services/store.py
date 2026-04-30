@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from app.models.enums import ApprovalDecision, JobStatus, TaskStatus, WorkflowStage
 from app.schemas.approvals import ApprovalChangeItem, ApprovalDetail
 from app.schemas.artifacts import Artifact
+from app.schemas.dashboard import DashboardSummary
 from app.schemas.events import JobEvent, JobLog
 from app.schemas.jobs import (
     ApprovalCounts,
@@ -222,17 +223,62 @@ class InMemoryStore:
         return run
 
     def add_pr_artifact(self, job_id: UUID) -> Artifact:
+        job = self.jobs[job_id]
         artifact = Artifact(
             id=uuid4(),
             job_id=job_id,
             artifact_type="pr_summary",
             storage_path=f"artifacts/{job_id}/pr-summary.md",
             content_type="text/markdown",
-            metadata_json={"summary": "MVP orchestration patch is ready for review."},
+            metadata_json={
+                "summary": "MVP orchestration patch is ready for review.",
+                "body": (
+                    f"# PR Summary\n\n"
+                    f"## Goal\n{job.request_text}\n\n"
+                    f"## Changes\n"
+                    f"- Created a planner DAG for the requested coding work.\n"
+                    f"- Ran backend, frontend, test, and validation task stages.\n"
+                    f"- Produced approval and validation records for auditability.\n\n"
+                    f"## Validation\nAll configured MVP validation checks passed.\n"
+                ),
+            },
             created_at=now(),
         )
         self.artifacts[job_id].append(artifact)
         return artifact
+
+    def get_artifact(self, job_id: UUID, artifact_id: UUID) -> Artifact | None:
+        for artifact in self.artifacts[job_id]:
+            if artifact.id == artifact_id:
+                return artifact
+        return None
+
+    def list_approvals(self) -> list[ApprovalDetail]:
+        return sorted(self.approvals.values(), key=lambda item: item.created_at, reverse=True)
+
+    def dashboard_summary(self) -> DashboardSummary:
+        validations = [run for runs in self.validations.values() for run in runs]
+        return DashboardSummary(
+            active_jobs=sum(
+                job.status
+                in {
+                    JobStatus.CREATED,
+                    JobStatus.QUEUED,
+                    JobStatus.INDEXING_REPO,
+                    JobStatus.PLANNING,
+                    JobStatus.WAITING_FOR_APPROVAL,
+                    JobStatus.EXECUTING,
+                    JobStatus.VALIDATING,
+                    JobStatus.REVIEWING,
+                }
+                for job in self.jobs.values()
+            ),
+            completed_jobs=sum(job.status == JobStatus.COMPLETED for job in self.jobs.values()),
+            failed_jobs=sum(job.status == JobStatus.FAILED for job in self.jobs.values()),
+            pending_approvals=sum(item.decision == ApprovalDecision.PENDING for item in self.approvals.values()),
+            validation_failures=sum(run.overall_status == "failed" for run in validations),
+            total_jobs=len(self.jobs),
+        )
 
     def status_snapshot(self, job_id: UUID) -> JobStatusSnapshot:
         job = self.jobs[job_id]
