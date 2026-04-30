@@ -4,6 +4,7 @@ import { FileText } from "lucide-react";
 import { useState } from "react";
 
 import type { Artifact } from "@/lib/types/artifact";
+import { DiffViewer } from "@/components/jobs/diff-viewer";
 import { useJobArtifactContent } from "@/lib/hooks/use-job-detail";
 
 export function ArtifactsTab({ artifacts }: { artifacts: Artifact[] }) {
@@ -36,7 +37,9 @@ export function ArtifactsTab({ artifacts }: { artifacts: Artifact[] }) {
       <section className="min-h-80 rounded border border-border bg-white p-4">
         <h2 className="mb-3 font-semibold">Preview</h2>
         {content.isLoading ? <div className="text-sm text-muted-foreground">Loading artifact...</div> : null}
-        {content.data ? (
+        {content.data?.artifact.artifact_type === "diff" ? (
+          <DiffViewer content={content.data} />
+        ) : content.data ? (
           <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded bg-muted p-3 text-sm">{content.data.body}</pre>
         ) : (
           <div className="text-sm text-muted-foreground">Select an artifact to preview.</div>
