@@ -11,6 +11,10 @@ class ValidationCheck(BaseModel):
     command_text: str | None = None
     output_summary: str | None = None
     failure_summary: str | None = None
+    exit_code: int | None = None
+    duration_ms: int | None = None
+    stdout: str | None = None
+    stderr: str | None = None
 
 
 class ValidationRun(BaseModel):
@@ -21,3 +25,7 @@ class ValidationRun(BaseModel):
     created_at: datetime
     finished_at: datetime | None = None
 
+
+class ValidationRunRequest(BaseModel):
+    simulate_failure: bool = False
+    auto_debug: bool = True

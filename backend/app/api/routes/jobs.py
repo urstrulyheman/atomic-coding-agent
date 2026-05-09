@@ -10,9 +10,10 @@ from app.schemas.approvals import ApprovalDetail
 from app.schemas.events import JobEvent, JobLog
 from app.schemas.jobs import JobCreate, JobDetail, JobStatusSnapshot, JobSummary
 from app.schemas.tasks import TaskDetail, TaskSummary
-from app.schemas.validation import ValidationRun
+from app.schemas.validation import ValidationRun, ValidationRunRequest
 from app.services.orchestrator import orchestrator
 from app.services.store import store
+from app.services.validation_runner import validation_runner
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -116,6 +117,17 @@ def get_job_validation(job_id: UUID) -> list[ValidationRun]:
     if store.get_job(job_id) is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return store.validations[job_id]
+
+
+@router.post("/{job_id}/validation/rerun", response_model=list[ValidationRun])
+def rerun_job_validation(job_id: UUID, payload: ValidationRunRequest) -> list[ValidationRun]:
+    if store.get_job(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return validation_runner.run_validation_cycle(
+        job_id,
+        simulate_failure=payload.simulate_failure,
+        auto_debug=payload.auto_debug,
+    )
 
 
 @router.get("/{job_id}/approvals", response_model=list[ApprovalDetail])

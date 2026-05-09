@@ -5,6 +5,7 @@ from app.models.enums import JobStatus, TaskStatus, WorkflowStage
 from app.schemas.approvals import ApprovalChangeItem
 from app.schemas.jobs import JobCreate, JobDetail
 from app.services.store import default_plan, store
+from app.services.validation_runner import validation_runner
 
 
 class OrchestratorService:
@@ -49,7 +50,7 @@ class OrchestratorService:
 
         store.update_job_state(job_id, JobStatus.VALIDATING, WorkflowStage.VALIDATION)
         await self._complete_task(job_id, "validate", "Validation gates passed.")
-        store.add_validation(job_id)
+        validation_runner.run_validation_cycle(job_id)
 
         store.update_job_state(job_id, JobStatus.REVIEWING, WorkflowStage.REVIEW)
         store.add_event(job_id, "review.completed", "Reviewer scored the patch and prepared handoff notes.")

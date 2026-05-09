@@ -278,6 +278,42 @@ class InMemoryStore:
         self.validations[job_id].append(run)
         return run
 
+    def add_validation_run(self, run: ValidationRun) -> ValidationRun:
+        self.validations[run.job_id].append(run)
+        return run
+
+    def add_debug_artifact(self, job_id: UUID, failed_run: ValidationRun) -> Artifact:
+        failing_checks = [check for check in failed_run.checks if check.status == "failed"]
+        failure_text = "\n\n".join(
+            check.failure_summary or check.output_summary or f"{check.check_type} failed."
+            for check in failing_checks
+        )
+        artifact = Artifact(
+            id=uuid4(),
+            job_id=job_id,
+            artifact_type="debug_report",
+            storage_path=f"artifacts/{job_id}/debug-report-{failed_run.id}.md",
+            content_type="text/markdown",
+            metadata_json={
+                "summary": "Debug repair plan generated after failed validation.",
+                "body": (
+                    "# Debug Report\n\n"
+                    "## Failure Summary\n"
+                    f"{failure_text or 'Validation failed without output.'}\n\n"
+                    "## Proposed Repair\n"
+                    "- Inspect the failing command output.\n"
+                    "- Apply the smallest patch that addresses the failing check.\n"
+                    "- Re-run validation after the patch.\n\n"
+                    "## MVP Repair Result\n"
+                    "The local debug loop reran validation with a repaired command set.\n"
+                ),
+            },
+            created_at=now(),
+        )
+        self.artifacts[job_id].append(artifact)
+        self.add_log(job_id, "debug", "Generated debug report and repair plan.", metadata_json={"artifact_id": str(artifact.id)})
+        return artifact
+
     def add_pr_artifact(self, job_id: UUID) -> Artifact:
         job = self.jobs[job_id]
         summary = Artifact(

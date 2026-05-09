@@ -66,7 +66,7 @@ export default function JobDetailPage() {
       {activeTab === "live" && <LiveActivity events={events} connected={connected} />}
       {activeTab === "approvals" && <ApprovalsTab approvals={approvals.data ?? []} />}
       {activeTab === "logs" && <LogsTab logs={logs.data ?? []} />}
-      {activeTab === "validation" && <ValidationTab runs={validation.data ?? []} />}
+      {activeTab === "validation" && <ValidationTab jobId={jobId} runs={validation.data ?? []} />}
       {activeTab === "review" && (
         <ReviewTab score={status.data.review?.score} recommendation={status.data.review?.recommendation} />
       )}

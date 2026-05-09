@@ -4,7 +4,7 @@ import type { Artifact, ArtifactContent } from "@/lib/types/artifact";
 import type { JobEvent } from "@/lib/types/event";
 import type { JobCreate, JobDetail, JobStatusSnapshot, JobSummary } from "@/lib/types/job";
 import type { TaskDetail, TaskSummary } from "@/lib/types/task";
-import type { ValidationRun } from "@/lib/types/validation";
+import type { ValidationRun, ValidationRunRequest } from "@/lib/types/validation";
 
 export function createJob(payload: JobCreate) {
   return api<JobDetail>("/jobs", {
@@ -57,6 +57,13 @@ export function getJobArtifactContent(jobId: string, artifactId: string) {
 
 export function getJobValidation(jobId: string) {
   return api<ValidationRun[]>(`/jobs/${jobId}/validation`);
+}
+
+export function rerunJobValidation(jobId: string, payload: ValidationRunRequest) {
+  return api<ValidationRun[]>(`/jobs/${jobId}/validation/rerun`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getJobEvents(jobId: string) {

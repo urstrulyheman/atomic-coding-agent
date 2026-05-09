@@ -93,3 +93,29 @@ def test_task_detail_endpoint_returns_context():
     assert detail.status_code == 200
     assert detail.json()["id"] == task_id
     assert detail.json()["acceptance_criteria"]
+
+
+def test_validation_rerun_can_debug_and_recover():
+    response = client.post(
+        "/api/v1/jobs",
+        json={
+            "title": "Validation debug smoke",
+            "request_text": "Exercise sandbox validation and debug retry.",
+            "repo_url": "https://github.com/example/app",
+        },
+    )
+    assert response.status_code == 201
+    job_id = response.json()["job_id"]
+
+    rerun = client.post(
+        f"/api/v1/jobs/{job_id}/validation/rerun",
+        json={"simulate_failure": True, "auto_debug": True},
+    )
+    assert rerun.status_code == 200
+    runs = rerun.json()
+    assert runs[0]["overall_status"] == "failed"
+    assert runs[-1]["overall_status"] == "passed"
+
+    artifacts = client.get(f"/api/v1/jobs/{job_id}/artifacts")
+    assert artifacts.status_code == 200
+    assert any(item["artifact_type"] == "debug_report" for item in artifacts.json())

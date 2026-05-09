@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   getJob,
@@ -12,6 +12,7 @@ import {
   getJobTask,
   getJobTasks,
   getJobValidation,
+  rerunJobValidation,
 } from "@/lib/api/jobs";
 import { queryKeys } from "@/lib/utils/query-keys";
 
@@ -76,6 +77,19 @@ export function useJobValidation(jobId: string) {
     queryKey: queryKeys.jobValidation(jobId),
     queryFn: () => getJobValidation(jobId),
     enabled: Boolean(jobId),
+  });
+}
+
+export function useRerunJobValidation(jobId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { simulate_failure: boolean; auto_debug: boolean }) => rerunJobValidation(jobId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobValidation(jobId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobArtifacts(jobId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobLogs(jobId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobStatus(jobId) });
+    },
   });
 }
 
