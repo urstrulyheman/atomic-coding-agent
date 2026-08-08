@@ -16,6 +16,7 @@ from app.schemas.jobs import (
     ReviewSnapshot,
     TaskCounts,
 )
+from app.schemas.providers import AIProviderCreate, AIProviderPublic, AIProviderUpdate
 from app.schemas.tasks import PlannerOutput, TaskDefinition, TaskDetail, TaskSummary
 from app.schemas.validation import ValidationCheck, ValidationRun
 
@@ -33,6 +34,27 @@ class InMemoryStore:
         self.artifacts: dict[UUID, list[Artifact]] = defaultdict(list)
         self.validations: dict[UUID, list[ValidationRun]] = defaultdict(list)
         self.approvals: dict[UUID, ApprovalDetail] = {}
+        self.providers: dict[UUID, AIProviderPublic] = {}
+        self.provider_secrets: dict[UUID, str] = {}
+        self._seed_default_providers()
+
+    def _seed_default_providers(self) -> None:
+        for provider_type, display_name, default_model, base_url in [
+            ("openai", "OpenAI", "gpt-5.1", "https://api.openai.com/v1"),
+            ("anthropic", "Anthropic", "claude-sonnet-4.5", "https://api.anthropic.com"),
+            ("xai", "xAI Grok", "grok-code-fast-1", "https://api.x.ai/v1"),
+            ("google", "Google Gemini", "gemini-2.5-pro", "https://generativelanguage.googleapis.com"),
+            ("openrouter", "OpenRouter", "openai/gpt-5.1", "https://openrouter.ai/api/v1"),
+            ("local", "Local / OpenAI-compatible", "qwen2.5-coder", "http://localhost:11434/v1"),
+        ]:
+            provider = AIProviderCreate(
+                provider_type=provider_type,
+                display_name=display_name,
+                default_model=default_model,
+                base_url=base_url,
+                enabled=provider_type in {"openai", "anthropic"},
+            )
+            self.create_provider(provider)
 
     def create_job(self, payload: JobCreate) -> JobDetail:
         job_id = uuid4()
@@ -55,6 +77,63 @@ class InMemoryStore:
         self.add_event(job_id, "job.created", "Job accepted and queued for orchestration.")
         self.add_log(job_id, "system", "Created job record.")
         return job
+
+    def list_providers(self) -> list[AIProviderPublic]:
+        return sorted(self.providers.values(), key=lambda item: item.display_name.lower())
+
+    def get_provider(self, provider_id: UUID) -> AIProviderPublic | None:
+        return self.providers.get(provider_id)
+
+    def create_provider(self, payload: AIProviderCreate) -> AIProviderPublic:
+        provider_id = uuid4()
+        timestamp = now()
+        api_key_preview = self._mask_api_key(payload.api_key)
+        provider = AIProviderPublic(
+            id=provider_id,
+            provider_type=payload.provider_type,
+            display_name=payload.display_name,
+            base_url=payload.base_url,
+            default_model=payload.default_model,
+            embedding_model=payload.embedding_model,
+            enabled=payload.enabled,
+            api_key_configured=bool(payload.api_key),
+            api_key_preview=api_key_preview,
+            capabilities=payload.capabilities,
+            policy=payload.policy,
+            created_at=timestamp,
+            updated_at=timestamp,
+        )
+        self.providers[provider_id] = provider
+        if payload.api_key:
+            self.provider_secrets[provider_id] = payload.api_key
+        return provider
+
+    def update_provider(self, provider_id: UUID, payload: AIProviderUpdate) -> AIProviderPublic | None:
+        provider = self.providers.get(provider_id)
+        if provider is None:
+            return None
+        changes = payload.model_dump(exclude_unset=True)
+        if "api_key" in changes:
+            api_key = changes.pop("api_key")
+            if api_key:
+                self.provider_secrets[provider_id] = api_key
+                changes["api_key_configured"] = True
+                changes["api_key_preview"] = self._mask_api_key(api_key)
+            else:
+                self.provider_secrets.pop(provider_id, None)
+                changes["api_key_configured"] = False
+                changes["api_key_preview"] = None
+        changes["updated_at"] = now()
+        updated = provider.model_copy(update=changes)
+        self.providers[provider_id] = updated
+        return updated
+
+    def _mask_api_key(self, api_key: str | None) -> str | None:
+        if not api_key:
+            return None
+        if len(api_key) <= 8:
+            return "••••"
+        return f"{api_key[:4]}…{api_key[-4:]}"
 
     def list_jobs(self) -> list[JobSummary]:
         return [

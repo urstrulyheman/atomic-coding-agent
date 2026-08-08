@@ -12,4 +12,5 @@ export const queryKeys = {
   approvals: ["approvals"] as const,
   approval: (approvalId: string) => ["approvals", approvalId] as const,
   dashboardSummary: ["dashboard", "summary"] as const,
+  providers: ["providers"] as const,
 };

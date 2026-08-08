@@ -119,3 +119,33 @@ def test_validation_rerun_can_debug_and_recover():
     artifacts = client.get(f"/api/v1/jobs/{job_id}/artifacts")
     assert artifacts.status_code == 200
     assert any(item["artifact_type"] == "debug_report" for item in artifacts.json())
+
+
+def test_ai_provider_configuration_masks_keys():
+    providers = client.get("/api/v1/providers")
+    assert providers.status_code == 200
+    assert len(providers.json()) >= 1
+
+    create = client.post(
+        "/api/v1/providers",
+        json={
+            "provider_type": "custom",
+            "display_name": "Custom Test Provider",
+            "api_key": "sk-test-secret-value",
+            "base_url": "https://api.example.com/v1",
+            "default_model": "custom-code-model",
+            "enabled": True,
+        },
+    )
+    assert create.status_code == 201
+    created = create.json()
+    assert created["api_key_configured"] is True
+    assert "secret" not in (created["api_key_preview"] or "")
+
+    update = client.patch(
+        f"/api/v1/providers/{created['id']}",
+        json={"enabled": False, "default_model": "custom-code-model-v2"},
+    )
+    assert update.status_code == 200
+    assert update.json()["enabled"] is False
+    assert update.json()["default_model"] == "custom-code-model-v2"

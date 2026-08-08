@@ -53,6 +53,7 @@ const nav = [
   { label: "New chat", href: "/new", icon: MessageSquarePlus },
   { label: "Search", href: "/jobs", icon: Search },
   { label: "Automations", href: "/dashboard", icon: Clock },
+  { label: "AI Providers", href: "/settings/providers", icon: Settings },
 ];
 
 function getJobId(pathname: string) {
@@ -215,7 +216,7 @@ function LeftSidebar({ pathname }: { pathname: string }) {
         ))}
       </div>
 
-      <Link href="/dashboard" className="flex items-center gap-3 border-t border-[#dfe8d6] px-5 py-4 text-sm text-[#4f594b]">
+      <Link href="/settings/providers" className="flex items-center gap-3 border-t border-[#dfe8d6] px-5 py-4 text-sm text-[#4f594b]">
         <Settings size={16} aria-hidden />
         Settings
       </Link>
@@ -224,7 +225,9 @@ function LeftSidebar({ pathname }: { pathname: string }) {
 }
 
 function TopBar({ pathname }: { pathname: string }) {
-  const title = pathname.startsWith("/new")
+  const title = pathname.startsWith("/settings/providers")
+    ? "AI provider settings"
+    : pathname.startsWith("/new")
     ? "New coding job"
     : pathname.startsWith("/approvals")
       ? "Approvals"
