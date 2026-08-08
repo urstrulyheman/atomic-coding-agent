@@ -43,3 +43,8 @@ Open `http://localhost:3001`.
 6. Render job detail tabs and approval actions in the UI.
 
 This is intentionally an MVP control plane. The in-memory orchestration service is shaped so it can later be replaced by Temporal workers while keeping the API contracts stable.
+
+## Architecture
+
+- [End-to-end architecture](docs/end-to-end-architecture.md)
+- [Provider-agnostic design](docs/revised-design.md)
