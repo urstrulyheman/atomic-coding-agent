@@ -149,3 +149,39 @@ def test_ai_provider_configuration_masks_keys():
     assert update.status_code == 200
     assert update.json()["enabled"] is False
     assert update.json()["default_model"] == "custom-code-model-v2"
+
+
+def test_model_call_dry_run_is_routed_and_audited():
+    response = client.post(
+        "/api/v1/jobs",
+        json={
+            "title": "Model gateway smoke",
+            "request_text": "Plan a small API change.",
+            "repo_url": "https://github.com/example/app",
+        },
+    )
+    assert response.status_code == 201
+    job_id = response.json()["job_id"]
+
+    model_call = client.post(
+        f"/api/v1/jobs/{job_id}/model-calls",
+        json={
+            "job_id": job_id,
+            "purpose": "planning",
+            "prompt": "Plan a small API change.",
+            "provider_preference": ["openai"],
+            "model_preference": [],
+            "response_schema": "planner_output_v1",
+            "max_cost_usd": 1,
+            "allow_private_repo_code": False,
+            "dry_run": True,
+        },
+    )
+    assert model_call.status_code == 201
+    body = model_call.json()
+    assert body["provider_type"] == "openai"
+    assert body["status"] == "dry_run"
+
+    calls = client.get(f"/api/v1/jobs/{job_id}/model-calls")
+    assert calls.status_code == 200
+    assert any(item["id"] == body["id"] for item in calls.json())

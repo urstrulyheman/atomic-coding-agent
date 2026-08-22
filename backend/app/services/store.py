@@ -16,6 +16,7 @@ from app.schemas.jobs import (
     ReviewSnapshot,
     TaskCounts,
 )
+from app.schemas.model_calls import ModelCallResult
 from app.schemas.providers import AIProviderCreate, AIProviderPublic, AIProviderUpdate
 from app.schemas.tasks import PlannerOutput, TaskDefinition, TaskDetail, TaskSummary
 from app.schemas.validation import ValidationCheck, ValidationRun
@@ -36,6 +37,7 @@ class InMemoryStore:
         self.approvals: dict[UUID, ApprovalDetail] = {}
         self.providers: dict[UUID, AIProviderPublic] = {}
         self.provider_secrets: dict[UUID, str] = {}
+        self.model_calls: dict[UUID, list[ModelCallResult]] = defaultdict(list)
         self._seed_default_providers()
 
     def _seed_default_providers(self) -> None:
@@ -205,6 +207,13 @@ class InMemoryStore:
         )
         self.logs[job_id].append(log)
         return log
+
+    def add_model_call(self, result: ModelCallResult) -> ModelCallResult:
+        self.model_calls[result.job_id].append(result)
+        return result
+
+    def list_model_calls(self, job_id: UUID) -> list[ModelCallResult]:
+        return sorted(self.model_calls[job_id], key=lambda item: item.created_at, reverse=True)
 
     def create_plan_tasks(self, job_id: UUID, plan: PlannerOutput) -> list[TaskSummary]:
         created: list[TaskSummary] = []

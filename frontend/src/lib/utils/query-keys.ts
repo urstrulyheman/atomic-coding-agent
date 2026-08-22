@@ -5,6 +5,7 @@ export const queryKeys = {
   jobTasks: (jobId: string) => ["jobs", jobId, "tasks"] as const,
   jobTask: (jobId: string, taskId: string) => ["jobs", jobId, "tasks", taskId] as const,
   jobLogs: (jobId: string) => ["jobs", jobId, "logs"] as const,
+  jobModelCalls: (jobId: string) => ["jobs", jobId, "model-calls"] as const,
   jobArtifacts: (jobId: string) => ["jobs", jobId, "artifacts"] as const,
   jobArtifactContent: (jobId: string, artifactId: string) => ["jobs", jobId, "artifacts", artifactId] as const,
   jobValidation: (jobId: string) => ["jobs", jobId, "validation"] as const,

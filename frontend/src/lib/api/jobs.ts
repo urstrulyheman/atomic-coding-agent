@@ -3,6 +3,7 @@ import type { ApprovalDetail } from "@/lib/types/approval";
 import type { Artifact, ArtifactContent } from "@/lib/types/artifact";
 import type { JobEvent } from "@/lib/types/event";
 import type { JobCreate, JobDetail, JobStatusSnapshot, JobSummary } from "@/lib/types/job";
+import type { ModelCallRequest, ModelCallResult } from "@/lib/types/model-call";
 import type { TaskDetail, TaskSummary } from "@/lib/types/task";
 import type { ValidationRun, ValidationRunRequest } from "@/lib/types/validation";
 
@@ -45,6 +46,17 @@ export type JobLog = {
 
 export function getJobLogs(jobId: string) {
   return api<JobLog[]>(`/jobs/${jobId}/logs`);
+}
+
+export function getJobModelCalls(jobId: string) {
+  return api<ModelCallResult[]>(`/jobs/${jobId}/model-calls`);
+}
+
+export function createJobModelCall(jobId: string, payload: ModelCallRequest) {
+  return api<ModelCallResult>(`/jobs/${jobId}/model-calls`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getJobArtifacts(jobId: string) {

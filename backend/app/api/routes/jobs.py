@@ -9,9 +9,11 @@ from app.schemas.artifacts import Artifact, ArtifactContent
 from app.schemas.approvals import ApprovalDetail
 from app.schemas.events import JobEvent, JobLog
 from app.schemas.jobs import JobCreate, JobDetail, JobStatusSnapshot, JobSummary
+from app.schemas.model_calls import ModelCallRequest, ModelCallResult
 from app.schemas.tasks import TaskDetail, TaskSummary
 from app.schemas.validation import ValidationRun, ValidationRunRequest
 from app.services.orchestrator import orchestrator
+from app.services.model_gateway import model_gateway
 from app.services.store import store
 from app.services.validation_runner import validation_runner
 
@@ -90,6 +92,25 @@ def get_job_logs(job_id: UUID) -> list[JobLog]:
     if store.get_job(job_id) is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return store.logs[job_id]
+
+
+@router.get("/{job_id}/model-calls", response_model=list[ModelCallResult])
+def get_job_model_calls(job_id: UUID) -> list[ModelCallResult]:
+    if store.get_job(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return store.list_model_calls(job_id)
+
+
+@router.post("/{job_id}/model-calls", response_model=ModelCallResult, status_code=201)
+def create_job_model_call(job_id: UUID, payload: ModelCallRequest) -> ModelCallResult:
+    if store.get_job(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if payload.job_id != job_id:
+        raise HTTPException(status_code=400, detail="Payload job_id must match route job_id")
+    try:
+        return model_gateway.invoke(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.get("/{job_id}/artifacts", response_model=list[Artifact])

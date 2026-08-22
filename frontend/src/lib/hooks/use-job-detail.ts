@@ -8,12 +8,15 @@ import {
   getJobArtifacts,
   getJobArtifactContent,
   getJobLogs,
+  getJobModelCalls,
   getJobStatus,
   getJobTask,
   getJobTasks,
   getJobValidation,
   rerunJobValidation,
+  createJobModelCall,
 } from "@/lib/api/jobs";
+import type { ModelCallRequest } from "@/lib/types/model-call";
 import { queryKeys } from "@/lib/utils/query-keys";
 
 export function useJobDetail(jobId: string) {
@@ -53,6 +56,25 @@ export function useJobLogs(jobId: string) {
     queryKey: queryKeys.jobLogs(jobId),
     queryFn: () => getJobLogs(jobId),
     enabled: Boolean(jobId),
+  });
+}
+
+export function useJobModelCalls(jobId: string) {
+  return useQuery({
+    queryKey: queryKeys.jobModelCalls(jobId),
+    queryFn: () => getJobModelCalls(jobId),
+    enabled: Boolean(jobId),
+  });
+}
+
+export function useCreateJobModelCall(jobId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ModelCallRequest) => createJobModelCall(jobId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobModelCalls(jobId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobLogs(jobId) });
+    },
   });
 }
 

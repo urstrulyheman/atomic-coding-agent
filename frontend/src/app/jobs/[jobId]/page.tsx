@@ -8,6 +8,7 @@ import { ApprovalsTab } from "@/components/jobs/approvals-tab";
 import { JobHeader } from "@/components/jobs/job-header";
 import { LiveActivity } from "@/components/jobs/live-activity";
 import { LogsTab } from "@/components/jobs/logs-tab";
+import { ModelCallsTab } from "@/components/jobs/model-calls-tab";
 import { OverviewTab } from "@/components/jobs/overview-tab";
 import { PRSummaryTab } from "@/components/jobs/pr-summary-tab";
 import { ReviewTab } from "@/components/jobs/review-tab";
@@ -19,13 +20,25 @@ import {
   useJobApprovals,
   useJobDetail,
   useJobLogs,
+  useJobModelCalls,
   useJobStatus,
   useJobTasks,
   useJobValidation,
 } from "@/lib/hooks/use-job-detail";
 import { useJobEvents } from "@/lib/hooks/use-job-events";
 
-const tabs = ["overview", "tasks", "live", "approvals", "logs", "validation", "review", "artifacts", "pr-summary"] as const;
+const tabs = [
+  "overview",
+  "tasks",
+  "live",
+  "model-calls",
+  "approvals",
+  "logs",
+  "validation",
+  "review",
+  "artifacts",
+  "pr-summary",
+] as const;
 
 export default function JobDetailPage() {
   const params = useParams<{ jobId: string }>();
@@ -39,6 +52,7 @@ export default function JobDetailPage() {
   const approvals = useJobApprovals(jobId);
   const validation = useJobValidation(jobId);
   const logs = useJobLogs(jobId);
+  const modelCalls = useJobModelCalls(jobId);
   const { events, connected } = useJobEvents(jobId);
 
   if (job.isLoading || status.isLoading) return <div>Loading...</div>;
@@ -64,6 +78,9 @@ export default function JobDetailPage() {
       {activeTab === "overview" && <OverviewTab job={job.data} status={status.data} />}
       {activeTab === "tasks" && <TasksTab jobId={jobId} tasks={tasks.data ?? []} />}
       {activeTab === "live" && <LiveActivity events={events} connected={connected} />}
+      {activeTab === "model-calls" && (
+        <ModelCallsTab jobId={jobId} requestText={job.data.request_text} calls={modelCalls.data ?? []} />
+      )}
       {activeTab === "approvals" && <ApprovalsTab approvals={approvals.data ?? []} />}
       {activeTab === "logs" && <LogsTab logs={logs.data ?? []} />}
       {activeTab === "validation" && <ValidationTab jobId={jobId} runs={validation.data ?? []} />}

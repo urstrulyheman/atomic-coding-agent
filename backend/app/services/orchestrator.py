@@ -4,6 +4,8 @@ from uuid import UUID
 from app.models.enums import JobStatus, TaskStatus, WorkflowStage
 from app.schemas.approvals import ApprovalChangeItem
 from app.schemas.jobs import JobCreate, JobDetail
+from app.schemas.model_calls import ModelCallRequest
+from app.services.model_gateway import model_gateway
 from app.services.store import default_plan, store
 from app.services.validation_runner import validation_runner
 
@@ -21,6 +23,16 @@ class OrchestratorService:
             return
 
         store.update_job_state(job_id, JobStatus.PLANNING, WorkflowStage.PLANNING)
+        model_gateway.invoke(
+            ModelCallRequest(
+                job_id=job_id,
+                purpose="planning",
+                prompt=job.request_text,
+                provider_preference=["openai", "anthropic", "xai"],
+                response_schema="planner_output_v1",
+                dry_run=True,
+            )
+        )
         plan = default_plan(job.request_text)
         store.create_plan_tasks(job_id, plan)
         store.update_job_state(job_id, JobStatus.INDEXING_REPO, WorkflowStage.REPO_ANALYSIS)
