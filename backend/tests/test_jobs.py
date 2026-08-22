@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 from app.services.store import default_plan, store
+from app.services.planner_service import planner_service
 
 from app.main import app
 
@@ -185,3 +186,34 @@ def test_model_call_dry_run_is_routed_and_audited():
     calls = client.get(f"/api/v1/jobs/{job_id}/model-calls")
     assert calls.status_code == 200
     assert any(item["id"] == body["id"] for item in calls.json())
+
+
+def test_planner_output_is_validated_and_exposed():
+    response = client.post(
+        "/api/v1/jobs",
+        json={
+            "title": "Planner smoke",
+            "request_text": "Plan provider settings UI.",
+            "repo_url": "https://github.com/example/app",
+        },
+    )
+    assert response.status_code == 201
+    job_id = response.json()["job_id"]
+
+    planner_service.generate_plan(UUID(job_id))
+
+    plan = client.get(f"/api/v1/jobs/{job_id}/plan")
+    assert plan.status_code == 200
+    body = plan.json()
+    assert body["goal"] == "Plan provider settings UI."
+    assert body["requires_approval"] is True
+    assert body["provider_name"]
+    assert body["model_call_id"]
+    assert [task["task_key"] for task in body["tasks"]] == [
+        "analyze_repo",
+        "design_changes",
+        "implement_backend",
+        "implement_frontend",
+        "write_tests",
+        "validate",
+    ]

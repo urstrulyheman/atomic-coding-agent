@@ -10,6 +10,7 @@ from app.schemas.approvals import ApprovalDetail
 from app.schemas.events import JobEvent, JobLog
 from app.schemas.jobs import JobCreate, JobDetail, JobStatusSnapshot, JobSummary
 from app.schemas.model_calls import ModelCallRequest, ModelCallResult
+from app.schemas.planner import PlanRecord
 from app.schemas.tasks import TaskDetail, TaskSummary
 from app.schemas.validation import ValidationRun, ValidationRunRequest
 from app.services.orchestrator import orchestrator
@@ -99,6 +100,16 @@ def get_job_model_calls(job_id: UUID) -> list[ModelCallResult]:
     if store.get_job(job_id) is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return store.list_model_calls(job_id)
+
+
+@router.get("/{job_id}/plan", response_model=PlanRecord)
+def get_job_plan(job_id: UUID) -> PlanRecord:
+    if store.get_job(job_id) is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    plan = store.get_plan(job_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return plan
 
 
 @router.post("/{job_id}/model-calls", response_model=ModelCallResult, status_code=201)

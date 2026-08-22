@@ -9,6 +9,7 @@ import {
   getJobArtifactContent,
   getJobLogs,
   getJobModelCalls,
+  getJobPlan,
   getJobStatus,
   getJobTask,
   getJobTasks,
@@ -64,6 +65,15 @@ export function useJobModelCalls(jobId: string) {
     queryKey: queryKeys.jobModelCalls(jobId),
     queryFn: () => getJobModelCalls(jobId),
     enabled: Boolean(jobId),
+  });
+}
+
+export function useJobPlan(jobId: string) {
+  return useQuery({
+    queryKey: queryKeys.jobPlan(jobId),
+    queryFn: () => getJobPlan(jobId),
+    enabled: Boolean(jobId),
+    retry: false,
   });
 }
 

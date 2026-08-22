@@ -4,6 +4,7 @@ import type { Artifact, ArtifactContent } from "@/lib/types/artifact";
 import type { JobEvent } from "@/lib/types/event";
 import type { JobCreate, JobDetail, JobStatusSnapshot, JobSummary } from "@/lib/types/job";
 import type { ModelCallRequest, ModelCallResult } from "@/lib/types/model-call";
+import type { PlanRecord } from "@/lib/types/plan";
 import type { TaskDetail, TaskSummary } from "@/lib/types/task";
 import type { ValidationRun, ValidationRunRequest } from "@/lib/types/validation";
 
@@ -50,6 +51,10 @@ export function getJobLogs(jobId: string) {
 
 export function getJobModelCalls(jobId: string) {
   return api<ModelCallResult[]>(`/jobs/${jobId}/model-calls`);
+}
+
+export function getJobPlan(jobId: string) {
+  return api<PlanRecord>(`/jobs/${jobId}/plan`);
 }
 
 export function createJobModelCall(jobId: string, payload: ModelCallRequest) {

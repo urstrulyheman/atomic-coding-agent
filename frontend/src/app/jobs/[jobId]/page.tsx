@@ -10,6 +10,7 @@ import { LiveActivity } from "@/components/jobs/live-activity";
 import { LogsTab } from "@/components/jobs/logs-tab";
 import { ModelCallsTab } from "@/components/jobs/model-calls-tab";
 import { OverviewTab } from "@/components/jobs/overview-tab";
+import { PlanTab } from "@/components/jobs/plan-tab";
 import { PRSummaryTab } from "@/components/jobs/pr-summary-tab";
 import { ReviewTab } from "@/components/jobs/review-tab";
 import { StatusStrip } from "@/components/jobs/status-strip";
@@ -21,6 +22,7 @@ import {
   useJobDetail,
   useJobLogs,
   useJobModelCalls,
+  useJobPlan,
   useJobStatus,
   useJobTasks,
   useJobValidation,
@@ -29,6 +31,7 @@ import { useJobEvents } from "@/lib/hooks/use-job-events";
 
 const tabs = [
   "overview",
+  "plan",
   "tasks",
   "live",
   "model-calls",
@@ -53,6 +56,7 @@ export default function JobDetailPage() {
   const validation = useJobValidation(jobId);
   const logs = useJobLogs(jobId);
   const modelCalls = useJobModelCalls(jobId);
+  const plan = useJobPlan(jobId);
   const { events, connected } = useJobEvents(jobId);
 
   if (job.isLoading || status.isLoading) return <div>Loading...</div>;
@@ -76,6 +80,7 @@ export default function JobDetailPage() {
       </div>
 
       {activeTab === "overview" && <OverviewTab job={job.data} status={status.data} />}
+      {activeTab === "plan" && <PlanTab plan={plan.data ?? null} />}
       {activeTab === "tasks" && <TasksTab jobId={jobId} tasks={tasks.data ?? []} />}
       {activeTab === "live" && <LiveActivity events={events} connected={connected} />}
       {activeTab === "model-calls" && (

@@ -17,6 +17,7 @@ from app.schemas.jobs import (
     TaskCounts,
 )
 from app.schemas.model_calls import ModelCallResult
+from app.schemas.planner import PlanRecord
 from app.schemas.providers import AIProviderCreate, AIProviderPublic, AIProviderUpdate
 from app.schemas.tasks import PlannerOutput, TaskDefinition, TaskDetail, TaskSummary
 from app.schemas.validation import ValidationCheck, ValidationRun
@@ -38,6 +39,7 @@ class InMemoryStore:
         self.providers: dict[UUID, AIProviderPublic] = {}
         self.provider_secrets: dict[UUID, str] = {}
         self.model_calls: dict[UUID, list[ModelCallResult]] = defaultdict(list)
+        self.plans: dict[UUID, PlanRecord] = {}
         self._seed_default_providers()
 
     def _seed_default_providers(self) -> None:
@@ -214,6 +216,39 @@ class InMemoryStore:
 
     def list_model_calls(self, job_id: UUID) -> list[ModelCallResult]:
         return sorted(self.model_calls[job_id], key=lambda item: item.created_at, reverse=True)
+
+    def add_plan(
+        self,
+        job_id: UUID,
+        plan: PlannerOutput,
+        model_call: ModelCallResult | None = None,
+    ) -> PlanRecord:
+        record = PlanRecord(
+            id=uuid4(),
+            job_id=job_id,
+            goal=plan.goal,
+            tasks=plan.tasks,
+            risk_flags=plan.risk_flags,
+            requires_approval=plan.requires_approval,
+            provider_name=model_call.provider_name if model_call else None,
+            model=model_call.model if model_call else None,
+            model_call_id=model_call.id if model_call else None,
+            created_at=now(),
+        )
+        self.plans[job_id] = record
+        self.add_log(
+            job_id,
+            "planner",
+            "Stored validated planner output.",
+            metadata_json={
+                "plan_id": str(record.id),
+                "model_call_id": str(record.model_call_id) if record.model_call_id else None,
+            },
+        )
+        return record
+
+    def get_plan(self, job_id: UUID) -> PlanRecord | None:
+        return self.plans.get(job_id)
 
     def create_plan_tasks(self, job_id: UUID, plan: PlannerOutput) -> list[TaskSummary]:
         created: list[TaskSummary] = []
