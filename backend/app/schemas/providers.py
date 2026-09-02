@@ -58,3 +58,20 @@ class AIProviderPublic(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
+class ModelRoutingProfile(BaseModel):
+    planning: list[str] = Field(default_factory=lambda: ["openai", "anthropic", "xai", "google", "openrouter", "local"])
+    coding: list[str] = Field(default_factory=lambda: ["anthropic", "openai", "xai", "openrouter", "local", "google"])
+    review: list[str] = Field(default_factory=lambda: ["openai", "anthropic", "google", "xai", "openrouter", "local"])
+    debug: list[str] = Field(default_factory=lambda: ["anthropic", "openai", "xai", "openrouter", "local", "google"])
+    summarize: list[str] = Field(default_factory=lambda: ["openai", "anthropic", "google", "openrouter", "xai", "local"])
+    allow_fallback_to_any_enabled: bool = True
+
+
+class ModelRoutingProfileUpdate(BaseModel):
+    planning: list[str] | None = None
+    coding: list[str] | None = None
+    review: list[str] | None = None
+    debug: list[str] | None = None
+    summarize: list[str] | None = None
+    allow_fallback_to_any_enabled: bool | None = None

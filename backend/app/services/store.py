@@ -18,7 +18,7 @@ from app.schemas.jobs import (
 )
 from app.schemas.model_calls import ModelCallResult
 from app.schemas.planner import PlanRecord
-from app.schemas.providers import AIProviderCreate, AIProviderPublic, AIProviderUpdate
+from app.schemas.providers import AIProviderCreate, AIProviderPublic, AIProviderUpdate, ModelRoutingProfile
 from app.schemas.tasks import PlannerOutput, TaskDefinition, TaskDetail, TaskSummary
 from app.schemas.validation import ValidationCheck, ValidationRun
 
@@ -40,6 +40,7 @@ class InMemoryStore:
         self.provider_secrets: dict[UUID, str] = {}
         self.model_calls: dict[UUID, list[ModelCallResult]] = defaultdict(list)
         self.plans: dict[UUID, PlanRecord] = {}
+        self.routing_profile = ModelRoutingProfile()
         self._seed_default_providers()
 
     def _seed_default_providers(self) -> None:
@@ -131,6 +132,14 @@ class InMemoryStore:
         updated = provider.model_copy(update=changes)
         self.providers[provider_id] = updated
         return updated
+
+    def get_routing_profile(self) -> ModelRoutingProfile:
+        return self.routing_profile
+
+    def update_routing_profile(self, payload: dict) -> ModelRoutingProfile:
+        changes = {key: value for key, value in payload.items() if value is not None}
+        self.routing_profile = self.routing_profile.model_copy(update=changes)
+        return self.routing_profile
 
     def _mask_api_key(self, api_key: str | None) -> str | None:
         if not api_key:

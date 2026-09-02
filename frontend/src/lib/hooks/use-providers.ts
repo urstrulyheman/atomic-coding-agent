@@ -2,8 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createProvider, getProviders, updateProvider } from "@/lib/api/providers";
-import type { AIProviderCreate, AIProviderUpdate } from "@/lib/types/provider";
+import {
+  createProvider,
+  getProviders,
+  getRoutingProfile,
+  updateProvider,
+  updateRoutingProfile,
+} from "@/lib/api/providers";
+import type { AIProviderCreate, AIProviderUpdate, ModelRoutingProfileUpdate } from "@/lib/types/provider";
 import { queryKeys } from "@/lib/utils/query-keys";
 
 export function useProviders() {
@@ -30,3 +36,17 @@ export function useUpdateProvider() {
   });
 }
 
+export function useRoutingProfile() {
+  return useQuery({
+    queryKey: queryKeys.routingProfile,
+    queryFn: getRoutingProfile,
+  });
+}
+
+export function useUpdateRoutingProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ModelRoutingProfileUpdate) => updateRoutingProfile(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.routingProfile }),
+  });
+}

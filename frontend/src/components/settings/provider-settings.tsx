@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Bot, Check, KeyRound, Plus, Shield, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bot, Check, KeyRound, Plus, Route, Shield, SlidersHorizontal } from "lucide-react";
 
-import { useCreateProvider, useProviders, useUpdateProvider } from "@/lib/hooks/use-providers";
-import type { AIProvider, ProviderCapabilities, ProviderPolicy } from "@/lib/types/provider";
+import {
+  useCreateProvider,
+  useProviders,
+  useRoutingProfile,
+  useUpdateProvider,
+  useUpdateRoutingProfile,
+} from "@/lib/hooks/use-providers";
+import type { AIProvider, ModelRoutingProfile, ProviderCapabilities, ProviderPolicy } from "@/lib/types/provider";
 
 const capabilityLabels: Array<[keyof ProviderCapabilities, string]> = [
   ["chat", "Chat"],
@@ -30,6 +36,115 @@ const emptyPolicy: ProviderPolicy = {
   max_cost_per_job_usd: null,
   require_approval_before_use: false,
 };
+
+const routingPurposes: Array<keyof Omit<ModelRoutingProfile, "allow_fallback_to_any_enabled">> = [
+  "planning",
+  "coding",
+  "review",
+  "debug",
+  "summarize",
+];
+
+function RoutingProfilePanel({ providers }: { providers: AIProvider[] }) {
+  const routingProfile = useRoutingProfile();
+  const updateRoutingProfile = useUpdateRoutingProfile();
+  const providerTypes = Array.from(new Set(providers.map((provider) => provider.provider_type)));
+  const [draft, setDraft] = useState<ModelRoutingProfile | null>(null);
+
+  useEffect(() => {
+    if (routingProfile.data) {
+      setDraft(routingProfile.data);
+    }
+  }, [routingProfile.data]);
+
+  function updatePurpose(
+    purpose: keyof Omit<ModelRoutingProfile, "allow_fallback_to_any_enabled">,
+    index: number,
+    value: string,
+  ) {
+    setDraft((current) => {
+      if (!current) return current;
+      const next = [...current[purpose]];
+      next[index] = value;
+      return { ...current, [purpose]: Array.from(new Set(next.filter(Boolean))) };
+    });
+  }
+
+  function save() {
+    if (draft) {
+      updateRoutingProfile.mutate(draft);
+    }
+  }
+
+  if (!draft) {
+    return <section className="rounded-xl border border-[#e6e2da] bg-white p-5">Loading routing profile...</section>;
+  }
+
+  return (
+    <section className="rounded-xl border border-[#e6e2da] bg-white p-5 shadow-[0_10px_35px_rgba(23,32,38,0.06)]">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[#56734c]">
+            <Route size={16} aria-hidden />
+            Routing profile
+          </div>
+          <h2 className="font-semibold text-[#252a25]">Default model order by workload</h2>
+          <p className="mt-1 max-w-2xl text-sm text-[#6f736d]">
+            Used when a job does not request a specific provider. Explicit job preferences still take priority.
+          </p>
+        </div>
+        <button
+          className="inline-flex items-center gap-2 rounded bg-[#1f2320] px-4 py-2 text-sm text-white disabled:opacity-50"
+          onClick={save}
+          disabled={updateRoutingProfile.isPending}
+        >
+          <Check size={16} aria-hidden />
+          Save routing
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {routingPurposes.map((purpose) => (
+          <div key={purpose} className="grid gap-2 rounded border border-[#eeeae4] p-3 md:grid-cols-[130px_1fr]">
+            <div className="text-sm font-medium capitalize">{purpose}</div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {[0, 1, 2].map((index) => (
+                <select
+                  key={`${purpose}-${index}`}
+                  className="rounded border border-[#e6e2da] bg-white px-3 py-2 text-sm"
+                  value={draft[purpose][index] ?? ""}
+                  onChange={(event) => updatePurpose(purpose, index, event.target.value)}
+                >
+                  <option value="">No provider</option>
+                  {providerTypes.map((providerType) => (
+                    <option key={providerType} value={providerType}>
+                      {index + 1}. {providerType}
+                    </option>
+                  ))}
+                </select>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <label className="mt-4 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={draft.allow_fallback_to_any_enabled}
+          onChange={() =>
+            setDraft((current) =>
+              current
+                ? { ...current, allow_fallback_to_any_enabled: !current.allow_fallback_to_any_enabled }
+                : current,
+            )
+          }
+        />
+        Fallback to any enabled provider when no routing match is available
+      </label>
+    </section>
+  );
+}
 
 function ProviderCard({ provider }: { provider: AIProvider }) {
   const updateProvider = useUpdateProvider();
@@ -268,6 +383,8 @@ export function ProviderSettings() {
         </div>
       </div>
 
+      <RoutingProfilePanel providers={providers.data ?? []} />
+
       {providers.isLoading ? <div>Loading providers...</div> : null}
       <div className="space-y-4">
         {(providers.data ?? []).map((provider) => (
@@ -277,4 +394,3 @@ export function ProviderSettings() {
     </div>
   );
 }
-

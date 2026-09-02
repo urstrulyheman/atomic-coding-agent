@@ -45,17 +45,20 @@ class ModelRouter:
                 if provider.provider_type == preferred_type:
                     return provider
 
+        routing_profile = store.get_routing_profile()
         purpose_priority = {
-            "planning": ["openai", "anthropic", "xai", "google", "openrouter", "local"],
-            "coding": ["anthropic", "openai", "xai", "openrouter", "local", "google"],
-            "review": ["openai", "anthropic", "google", "xai", "openrouter", "local"],
-            "debug": ["anthropic", "openai", "xai", "openrouter", "local", "google"],
-            "summarize": ["openai", "anthropic", "google", "openrouter", "xai", "local"],
+            "planning": routing_profile.planning,
+            "coding": routing_profile.coding,
+            "review": routing_profile.review,
+            "debug": routing_profile.debug,
+            "summarize": routing_profile.summarize,
         }
         for provider_type in purpose_priority.get(request.purpose, []):
             for provider in providers:
                 if provider.provider_type == provider_type:
                     return provider
+        if not routing_profile.allow_fallback_to_any_enabled:
+            raise ValueError(f"No enabled AI provider matches the {request.purpose} routing profile.")
         return providers[0]
 
     def _select_model(self, provider: AIProviderPublic, request: ModelCallRequest) -> str:
@@ -71,4 +74,3 @@ class ModelRouter:
 
 
 model_router = ModelRouter()
-

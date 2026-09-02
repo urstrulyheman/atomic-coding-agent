@@ -44,3 +44,13 @@ export type AIProviderCreate = {
 
 export type AIProviderUpdate = Partial<AIProviderCreate>;
 
+export type ModelRoutingProfile = {
+  planning: string[];
+  coding: string[];
+  review: string[];
+  debug: string[];
+  summarize: string[];
+  allow_fallback_to_any_enabled: boolean;
+};
+
+export type ModelRoutingProfileUpdate = Partial<ModelRoutingProfile>;

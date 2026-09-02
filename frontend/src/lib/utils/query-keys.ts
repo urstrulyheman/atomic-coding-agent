@@ -15,4 +15,5 @@ export const queryKeys = {
   approval: (approvalId: string) => ["approvals", approvalId] as const,
   dashboardSummary: ["dashboard", "summary"] as const,
   providers: ["providers"] as const,
+  routingProfile: ["providers", "routing-profile"] as const,
 };
