@@ -16,7 +16,15 @@ export function OverviewTab({ job, status }: { job: JobDetail; status: JobStatus
           <div>Failed: {status.task_counts.failed}</div>
         </div>
       </section>
+      <section className="rounded border border-border bg-white p-4">
+        <h2 className="mb-2 font-semibold">AI Preferences</h2>
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <div>Provider: {job.model_preferences.provider_preference[0] ?? "Automatic routing"}</div>
+          <div>Model: {job.model_preferences.model_preference[0] ?? "Provider default"}</div>
+          <div>Max cost: {job.model_preferences.max_cost_usd ?? "No limit"}</div>
+          <div>Private repo context: {job.model_preferences.allow_private_repo_code ? "Allowed" : "Blocked"}</div>
+        </div>
+      </section>
     </div>
   );
 }
-

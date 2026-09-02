@@ -17,9 +17,12 @@ class PlannerService:
                 job_id=job_id,
                 purpose="planning",
                 prompt=job.request_text,
-                provider_preference=["openai", "anthropic", "xai"],
+                provider_preference=job.model_preferences.provider_preference,
+                model_preference=job.model_preferences.model_preference,
                 response_schema="planner_output_v1",
-                dry_run=True,
+                max_cost_usd=job.model_preferences.max_cost_usd,
+                allow_private_repo_code=job.model_preferences.allow_private_repo_code,
+                dry_run=job.model_preferences.dry_run,
             )
         )
         plan = default_plan(job.request_text)

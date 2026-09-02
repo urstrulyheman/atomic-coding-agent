@@ -14,6 +14,14 @@ class JobPolicies(BaseModel):
     require_human_for_file_deletes: bool = True
 
 
+class JobModelPreferences(BaseModel):
+    provider_preference: list[str] = Field(default_factory=list)
+    model_preference: list[str] = Field(default_factory=list)
+    max_cost_usd: float | None = Field(default=1, ge=0)
+    allow_private_repo_code: bool = False
+    dry_run: bool = True
+
+
 class JobCreate(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     request_text: str = Field(min_length=1)
@@ -21,6 +29,7 @@ class JobCreate(BaseModel):
     base_branch: str = "main"
     working_branch: str | None = None
     policies: JobPolicies = Field(default_factory=JobPolicies)
+    model_preferences: JobModelPreferences = Field(default_factory=JobModelPreferences)
 
 
 class JobSummary(BaseModel):
@@ -38,6 +47,7 @@ class JobDetail(JobSummary):
     base_branch: str
     working_branch: str
     policies: JobPolicies
+    model_preferences: JobModelPreferences
 
 
 class TaskCounts(BaseModel):
@@ -67,4 +77,3 @@ class JobStatusSnapshot(BaseModel):
     approval_counts: ApprovalCounts
     validation_status: str | None = None
     review: ReviewSnapshot | None = None
-

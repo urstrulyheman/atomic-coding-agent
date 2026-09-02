@@ -42,6 +42,15 @@ export type JobDetail = JobSummary & {
     require_human_for_billing_changes: boolean;
     require_human_for_file_deletes: boolean;
   };
+  model_preferences: JobModelPreferences;
+};
+
+export type JobModelPreferences = {
+  provider_preference: string[];
+  model_preference: string[];
+  max_cost_usd?: number | null;
+  allow_private_repo_code: boolean;
+  dry_run: boolean;
 };
 
 export type JobCreate = {
@@ -51,6 +60,7 @@ export type JobCreate = {
   base_branch: string;
   working_branch?: string;
   policies?: JobDetail["policies"];
+  model_preferences?: JobModelPreferences;
 };
 
 export type JobStatusSnapshot = {
@@ -75,4 +85,3 @@ export type JobStatusSnapshot = {
     recommendation?: string | null;
   } | null;
 };
-

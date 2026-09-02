@@ -73,6 +73,7 @@ class InMemoryStore:
             base_branch=payload.base_branch,
             working_branch=working_branch,
             policies=payload.policies,
+            model_preferences=payload.model_preferences,
             status=JobStatus.CREATED,
             workflow_stage=WorkflowStage.INTAKE,
             created_at=timestamp,

@@ -254,3 +254,31 @@ def test_planner_output_is_validated_and_exposed():
         "write_tests",
         "validate",
     ]
+
+
+def test_job_model_preferences_drive_planning_route():
+    response = client.post(
+        "/api/v1/jobs",
+        json={
+            "title": "Preferred planning model",
+            "request_text": "Plan using the selected provider.",
+            "repo_url": "https://github.com/example/app",
+            "model_preferences": {
+                "provider_preference": ["anthropic"],
+                "model_preference": ["claude-custom-planner"],
+                "max_cost_usd": 2,
+                "allow_private_repo_code": False,
+                "dry_run": True,
+            },
+        },
+    )
+    assert response.status_code == 201
+    job = response.json()
+    assert job["model_preferences"]["provider_preference"] == ["anthropic"]
+
+    planner_service.generate_plan(UUID(job["job_id"]))
+
+    plan = client.get(f"/api/v1/jobs/{job['job_id']}/plan")
+    assert plan.status_code == 200
+    assert plan.json()["provider_name"] == "Anthropic"
+    assert plan.json()["model"] == "claude-custom-planner"
