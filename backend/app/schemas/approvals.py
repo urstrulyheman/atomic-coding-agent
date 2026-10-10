@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.enums import ApprovalDecision
 
@@ -20,6 +20,7 @@ class ApprovalDetail(BaseModel):
     risk_level: str
     decision: ApprovalDecision
     change_items: list[ApprovalChangeItem]
+    metadata_json: dict = Field(default_factory=dict)
     created_at: datetime
     decided_at: datetime | None = None
 

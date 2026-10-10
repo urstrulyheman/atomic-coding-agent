@@ -373,6 +373,7 @@ class InMemoryStore:
         reason: str,
         risk_level: str,
         change_items: list[ApprovalChangeItem],
+        metadata_json: dict | None = None,
     ) -> ApprovalDetail:
         approval = ApprovalDetail(
             id=uuid4(),
@@ -382,6 +383,7 @@ class InMemoryStore:
             risk_level=risk_level,
             decision=ApprovalDecision.PENDING,
             change_items=change_items,
+            metadata_json=metadata_json or {},
             created_at=now(),
         )
         self.approvals[approval.id] = approval
@@ -394,6 +396,16 @@ class InMemoryStore:
         self.approvals[approval_id] = updated
         self.add_event(updated.job_id, f"approval.{decision.lower()}", comment or f"Approval {decision.lower()}.")
         return updated
+
+    def find_provider_approval(self, job_id: UUID, provider_id: UUID) -> ApprovalDetail | None:
+        for approval in self.approvals.values():
+            if approval.job_id != job_id:
+                continue
+            if approval.metadata_json.get("approval_type") != "provider_use":
+                continue
+            if approval.metadata_json.get("provider_id") == str(provider_id):
+                return approval
+        return None
 
     def add_validation(self, job_id: UUID) -> ValidationRun:
         run = ValidationRun(

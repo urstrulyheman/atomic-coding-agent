@@ -6,7 +6,6 @@ from app.services.planner_service import planner_service
 
 from app.main import app
 
-
 client = TestClient(app)
 
 
@@ -186,6 +185,80 @@ def test_model_call_dry_run_is_routed_and_audited():
     calls = client.get(f"/api/v1/jobs/{job_id}/model-calls")
     assert calls.status_code == 200
     assert any(item["id"] == body["id"] for item in calls.json())
+
+
+def test_provider_policy_requires_approval_before_model_use():
+    provider = client.post(
+        "/api/v1/providers",
+        json={
+            "provider_type": "approval-required-test",
+            "display_name": "Approval Required Test",
+            "base_url": "https://api.example.com/v1",
+            "default_model": "approval-model",
+            "enabled": True,
+            "policy": {
+                "allow_private_repo_code": False,
+                "allow_security_sensitive_tasks": False,
+                "max_cost_per_job_usd": None,
+                "require_approval_before_use": True,
+            },
+        },
+    )
+    assert provider.status_code == 201
+
+    response = client.post(
+        "/api/v1/jobs",
+        json={
+            "title": "Provider approval smoke",
+            "request_text": "Route to a provider that needs approval.",
+            "repo_url": "https://github.com/example/app",
+        },
+    )
+    assert response.status_code == 201
+    job_id = response.json()["job_id"]
+
+    blocked_call = client.post(
+        f"/api/v1/jobs/{job_id}/model-calls",
+        json={
+            "job_id": job_id,
+            "purpose": "planning",
+            "prompt": "Route to a provider that needs approval.",
+            "provider_preference": ["approval-required-test"],
+            "model_preference": [],
+            "response_schema": "planner_output_v1",
+            "max_cost_usd": 1,
+            "allow_private_repo_code": False,
+            "dry_run": True,
+        },
+    )
+    assert blocked_call.status_code == 201
+    blocked_body = blocked_call.json()
+    assert blocked_body["status"] == "approval_required"
+    approval_id = blocked_body["metadata_json"]["approval_id"]
+
+    approval = client.get(f"/api/v1/approvals/{approval_id}")
+    assert approval.status_code == 200
+    assert approval.json()["metadata_json"]["approval_type"] == "provider_use"
+
+    approve = client.post(f"/api/v1/approvals/{approval_id}/approve", json={"comment": "Approved for test."})
+    assert approve.status_code == 200
+
+    allowed_call = client.post(
+        f"/api/v1/jobs/{job_id}/model-calls",
+        json={
+            "job_id": job_id,
+            "purpose": "planning",
+            "prompt": "Route to a provider that needs approval.",
+            "provider_preference": ["approval-required-test"],
+            "model_preference": [],
+            "response_schema": "planner_output_v1",
+            "max_cost_usd": 1,
+            "allow_private_repo_code": False,
+            "dry_run": True,
+        },
+    )
+    assert allowed_call.status_code == 201
+    assert allowed_call.json()["status"] == "dry_run"
 
 
 def test_routing_profile_controls_default_provider_selection():

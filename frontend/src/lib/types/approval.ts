@@ -10,7 +10,7 @@ export type ApprovalDetail = {
     change_type: string;
     reason?: string | null;
   }>;
+  metadata_json: Record<string, unknown>;
   created_at: string;
   decided_at?: string | null;
 };
-
